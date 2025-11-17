@@ -1,22 +1,51 @@
 "use client";
 import Link from "next/link";
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios"; // ✅ fixed incorrect import
+import { toast } from "react-hot-toast";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [loading, setLoading] = React.useState(false);
+  const [buttonDisabled, setButtonDisabled] = React.useState(false);
   const [user, setUser] = React.useState({
     email: "",
     password: "",
   });
 
-  const onSignup = async () => {};
+  const onLogin = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post("/api/users/login", user);
+      toast.success("Logged in successfully");
+      const userId = response.data.user?.id;
+      if (userId) {
+        router.push(`/profile/${userId}`);
+      } else {
+        router.push(`/profile`);
+      }
+    } catch (error: any) {
+      console.error("Login error:", error?.response || error);
+      toast.error(error?.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user.email.length > 0 && user.password.length > 0) {
+      setButtonDisabled(false);
+    } else {
+      setButtonDisabled(true);
+    }
+  }, [user]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 px-4">
       <div className="bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl p-8 w-full max-w-md text-white">
         <h1 className="text-3xl font-bold text-center mb-6">
-          login to Your Account
+          {loading ? "Logging in..." : "Login to Your Account"}
         </h1>
         <hr className="border-gray-700 mb-6" />
 
@@ -40,10 +69,11 @@ export default function LoginPage() {
           />
 
           <button
-            onClick={onSignup}
-            className="mt-6 w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition-all duration-200 font-semibold"
+            onClick={onLogin}
+            disabled={buttonDisabled}
+            className="mt-6 w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition-all duration-200 font-semibold disabled:opacity-60"
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </div>
 
